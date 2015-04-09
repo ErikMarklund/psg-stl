@@ -16,5 +16,5 @@ A little python script to generate STL models of the five platonic solids.
 
 The following image displays the vertices, as well as the indices:
 
-![dodecahedron diagram](docs/dodecahedon_vertices.png)
+![dodecahedron diagram](docs/dodecahedron_vertices.png)
 

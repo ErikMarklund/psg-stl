@@ -1,11 +1,35 @@
 import argparse, textwrap, math
 
+PHI_GOLDEN = (1.0 + math.sqrt(5.0)) / 2.0
+
 def Vector(x, y, z):
     return {
         "x": x,
         "y": y,
         "z": z
     }
+
+def MatrixMultiply(vector, matrix):
+    v = Vector(0,0,0)
+
+    v["x"] = matrix[0] * vector["x"] + matrix[3] * vector["y"] + matrix[6] * vector["z"]
+    v["y"] = matrix[1] * vector["x"] + matrix[4] * vector["y"] + matrix[7] * vector["z"]
+    v["z"] = matrix[2] * vector["x"] + matrix[5] * vector["y"] + matrix[8] * vector["z"]
+
+    return v
+
+def RotationMatrixXAxis(angle):
+    rot_matrix = [ 1, 0, 0,
+                   0, math.cos(angle),  -math.sin(angle),
+                   0, math.sin(angle),   math.cos(angle) ]
+    return rot_matrix
+
+def RotationMatrixYAxis(angle):
+    rot_matrix = [ math.cos(angle),  0, math.sin(angle),
+                   0,                1,               0,
+                  -math.sin(angle),  0, math.cos(angle) ]
+    return rot_matrix
+
 
 class PlatonicSolid(object):
     verts = []
@@ -51,8 +75,16 @@ class Dodecahedron(PlatonicSolid):
         self.indices.append(
             [ indices[3], indices[4], indices[0] ])
 
+    def orientate_to_base(self):
+        # Assume a Z-up coordinate system (urgh)
+        angle = (2.0 * math.atan(PHI_GOLDEN)) * 0.5
+        rot_matrix = RotationMatrixXAxis(angle)
+
+        for vertexIdx in range(0, len(self.verts)):
+            self.verts[vertexIdx] = MatrixMultiply(self.verts[vertexIdx], rot_matrix)
+
     def generate(self):
-        phi = (1.0 + math.sqrt(5.0)) / 2.0
+        phi = PHI_GOLDEN
         one_over_phi = 1.0 / phi
 
         verts = []
@@ -102,10 +134,10 @@ class STLWriter:
         f = open(file_name, "w")
         f.write("solid " + solid.name + "\n")
 
-        for face in solid.indices:
-            vertex_a = solid.verts[face[0]]
-            vertex_b = solid.verts[face[1]]
-            vertex_c = solid.verts[face[2]]
+        for triangle in solid.indices:
+            vertex_a = solid.verts[triangle[0]]
+            vertex_b = solid.verts[triangle[1]]
+            vertex_c = solid.verts[triangle[2]]
             normal   = self.calculate_normal(vertex_a, vertex_b)
 
             f.write("facet normal ")
@@ -157,6 +189,7 @@ if __name__ == '__main__':
         solid = SOLIDS[solid_type]
         print "Generating solid of type " + solid.name
         solid.generate()
+        solid.orientate_to_base()
 
         writer = STLWriter()
         writer.write(solid)

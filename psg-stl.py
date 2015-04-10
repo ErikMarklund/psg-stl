@@ -41,16 +41,24 @@ class Cube(PlatonicSolid):
 
 class Dodecahedron(PlatonicSolid):
     def __init__(self):
-        super(Cube, self).__init__("Dodecahedron", 20)
+        super(Dodecahedron, self).__init__("Dodecahedron", 20)
+
+    def add_face(self, indices):
+        self.indices.append(
+            [ indices[0], indices[1], indices[2] ])
+        self.indices.append(
+            [ indices[2], indices[3], indices[0] ])
+        self.indices.append(
+            [ indices[3], indices[4], indices[0] ])
 
     def generate(self):
         phi = (1.0 + math.sqrt(5.0)) / 2.0
         one_over_phi = 1.0 / phi
 
         verts = []
-        for ix in range(-1, 1, 2):
-            for iy in range(-1, 1, 2):
-                for iz in range(-1, 1, 2):
+        for ix in range(-1, 2, 2):
+            for iy in range(-1, 2, 2):
+                for iz in range(-1, 2, 2):
                     verts.append(Vector(ix * 1, iy * 1, iz * 1))
 
                 verts.append(Vector(0,                 ix * one_over_phi, iy * phi         ))
@@ -60,7 +68,18 @@ class Dodecahedron(PlatonicSolid):
         self.verts = verts
 
         # Refer to diagram in docs to see how these indices are formed
-        # TODO!
+        self.add_face([15, 12, 2, 10, 14])
+        self.add_face([8, 5, 12, 15, 18])
+        self.add_face([8, 6, 9, 4, 5])
+        self.add_face([9, 4, 0, 3, 1])
+        self.add_face([6, 17, 7, 1, 9])
+        self.add_face([0, 3, 13, 10, 2])
+        self.add_face([13, 11, 7, 1, 3])
+        self.add_face([13, 11, 19, 14, 10])
+        self.add_face([14, 19, 16, 18, 15])
+        self.add_face([17, 6, 8, 18, 16])
+        self.add_face([11, 7, 17, 16, 19])
+        self.add_face([0, 2, 12, 5, 4])
 
 class STLWriter:
     def calculate_normal(self, a, b):
@@ -111,7 +130,8 @@ class STLWriter:
 if __name__ == '__main__':
     SOLIDS = {
         1: Tetrahedron(),
-        2: Cube()
+        2: Cube(),
+        4: Dodecahedron()
     }
 
     parser = argparse.ArgumentParser(

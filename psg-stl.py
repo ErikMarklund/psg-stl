@@ -242,6 +242,70 @@ class Dodecahedron(PlatonicSolid):
         self.add_face([11, 7, 17, 16, 19])
         self.add_face([0, 2, 12, 5, 4])
 
+class Icosahedron(PlatonicSolid):
+    def __init__(self):
+        super(Icosahedron, self).__init__("Icosahedron", 12)
+
+    def add_face(self, indices):
+        vertex_a = self.verts[indices[0]]
+        vertex_b = self.verts[indices[1]]
+        normal = self.calculate_normal(vertex_a, vertex_b)
+        self.tris.append(
+            Triangle([ indices[0], indices[1], indices[2] ], normal))
+
+    def orientate_to_base(self):
+        angleY = (math.pi - math.acos(-math.sqrt(5.0)/3.0)) * 0.5
+        rot_matrix = RotationMatrixYAxis(angleY)
+        self.perform_rotation(rot_matrix)
+
+        ri = (math.sqrt(3.0) / 12.0) * (3.0 + math.sqrt(5.0)) * 2.0 # Inscribed sphere
+        self.perform_translation(Vector(-2,2,ri))
+
+    def generate(self, split):
+        phi = PHI_GOLDEN
+
+        # I couldn't be bothered to calculate these verts and indices myself so
+        # I took them from Andreas Kahler's blog:
+        # (http://blog.andreaskahler.com/2009/06/creating-icosphere-mesh-in-code.html)
+        self.verts[0] = Vector(-1, phi, 0)
+        self.verts[1] = Vector( 1, phi, 0)
+        self.verts[2] = Vector(-1,-phi, 0)
+        self.verts[3] = Vector( 1,-phi, 0)
+
+        self.verts[4] = Vector(0,-1, phi)
+        self.verts[5] = Vector(0, 1, phi)
+        self.verts[6] = Vector(0,-1,-phi)
+        self.verts[7] = Vector(0, 1,-phi)
+
+        self.verts[8]  = Vector( phi, 0,-1)
+        self.verts[9]  = Vector( phi, 0, 1)
+        self.verts[10] = Vector(-phi, 0,-1)
+        self.verts[11] = Vector(-phi, 0, 1)
+
+        self.add_face([0, 11, 5]);
+        self.add_face([0, 5,  1]);
+        self.add_face([0, 1,  7]);
+        self.add_face([0, 7,  10]);
+        self.add_face([0, 10, 11]);
+
+        self.add_face([1,  5,  9]);
+        self.add_face([5,  11, 4]);
+        self.add_face([11, 10, 2]);
+        self.add_face([10, 7,  6]);
+        self.add_face([7,  1,  8]);
+
+        self.add_face([3, 9, 4]);
+        self.add_face([3, 4, 2]);
+        self.add_face([3, 2, 6]);
+        self.add_face([3, 6, 8]);
+        self.add_face([3, 8, 9]);
+
+        self.add_face([4, 9, 5]);
+        self.add_face([2, 4, 11]);
+        self.add_face([6, 2, 10]);
+        self.add_face([8, 6, 7]);
+        self.add_face([9, 8, 1]);
+
 class STLWriter:
     def stringify_vector_with_spaces(self, vector):
         s = ""
@@ -285,7 +349,8 @@ if __name__ == '__main__':
         1: Tetrahedron(),
         2: Cube(),
         3: Octohedron(),
-        4: Dodecahedron()
+        4: Dodecahedron(),
+        5: Icosahedron()
     }
 
     parser = argparse.ArgumentParser(

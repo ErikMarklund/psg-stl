@@ -144,9 +144,9 @@ class Cube(PlatonicSolid):
         self.add_face([2, 6, 7, 3])
         self.add_face([0, 1, 5, 4])
 
-class Octohedron(PlatonicSolid):
+class Octahedron(PlatonicSolid):
     def __init__(self):
-        super(Octohedron, self).__init__("Octohedron", 6)
+        super(Octahedron, self).__init__("Octahedron", 6)
 
     def add_face(self, indices, normal=None):
         if not normal:
@@ -348,7 +348,7 @@ if __name__ == '__main__':
     SOLIDS = {
         1: Tetrahedron(),
         2: Cube(),
-        3: Octohedron(),
+        3: Octahedron(),
         4: Dodecahedron(),
         5: Icosahedron()
     }

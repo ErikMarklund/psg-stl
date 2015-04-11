@@ -9,12 +9,27 @@ def Vector(x, y, z):
         "z": z
     }
 
+def Triangle(indices, normal):
+    return {
+        "indices": indices,
+        "normal": normal
+    }
+
 def MatrixMultiply(vector, matrix):
     v = Vector(0,0,0)
 
     v["x"] = matrix[0] * vector["x"] + matrix[3] * vector["y"] + matrix[6] * vector["z"]
     v["y"] = matrix[1] * vector["x"] + matrix[4] * vector["y"] + matrix[7] * vector["z"]
     v["z"] = matrix[2] * vector["x"] + matrix[5] * vector["y"] + matrix[8] * vector["z"]
+
+    return v
+
+def Translate(source, translation):
+    v = Vector(0,0,0)
+
+    v["x"] = source["x"] + translation["x"]
+    v["y"] = source["y"] + translation["y"]
+    v["z"] = source["z"] + translation["z"]
 
     return v
 
@@ -30,10 +45,16 @@ def RotationMatrixYAxis(angle):
                   -math.sin(angle),  0, math.cos(angle) ]
     return rot_matrix
 
+def RotationMatrixZAxis(angle):
+    rot_matrix = [ math.cos(angle), -math.sin(angle), 0,
+                   math.sin(angle),  math.cos(angle), 0,
+                   0,                0,               1 ]
+    return rot_matrix
+
 
 class PlatonicSolid(object):
     verts = []
-    indices = []
+    tris  = []
 
     def __init__(self, name, verts):
         self.name = name
@@ -43,45 +64,111 @@ class PlatonicSolid(object):
     def generate(self):
         raise Exception("Unimplemented method!")
 
+    def orientate_to_base(self):
+        raise Exception("Unimplemented method!")
+
+    def perform_rotation(self, rot_matrix):
+        for vertexIdx in range(0, len(self.verts)):
+            self.verts[vertexIdx] = MatrixMultiply(self.verts[vertexIdx], rot_matrix)
+
+    def perform_translation(self, trans_vector):
+        for vertexIdx in range(0, len(self.verts)):
+            self.verts[vertexIdx] = Translate(self.verts[vertexIdx], trans_vector)
+
+    def calculate_normal(self, a, b):
+        # Cross product a x b, then normalise
+        x = a["y"] * b["z"] - a["z"] * b["y"]
+        y = a["z"] * b["x"] - a["x"] * b["z"]
+        z = a["x"] * b["y"] - a["y"] * b["x"]
+        l = math.sqrt(x*x + y*y + z*z)
+
+        return Vector(x/l,y/l,z/l)
+
 class Tetrahedron(PlatonicSolid):
     def __init__(self):
         super(Tetrahedron, self).__init__("Tetrahedron", 4)
 
+    def add_face(self, indices):
+        vertex_a = self.verts[indices[0]]
+        vertex_b = self.verts[indices[1]]
+        normal = self.calculate_normal(vertex_a, vertex_b)
+        self.tris.append(Triangle(indices, normal))
+
+    def orientate_to_base(self):
+        z_trans = 1.0 / math.sqrt(2.0)
+        self.perform_translation(Vector(-1, 0, z_trans))
+
+        angleX = math.atan(math.sqrt(2.0))
+        rot_matrix = RotationMatrixXAxis(angleX)
+        self.perform_rotation(rot_matrix)
+
     def generate(self):
-        self.verts[0] = Vector( 1,  1,  1)
-        self.verts[1] = Vector( 1, -1, -1)
-        self.verts[2] = Vector(-1,  1, -1)
-        self.verts[3] = Vector(-1, -1,  1)
-        self.indices = [
-            [ 0, 1, 2],
-            [ 0, 1, 3],
-            [ 0, 2, 3],
-            [ 2, 1, 3]
-        ]
+        z = 1.0 / math.sqrt(2.0)
+
+        self.verts[0] = Vector(-1, 0, -z)
+        self.verts[1] = Vector( 1, 0, -z)
+        self.verts[2] = Vector( 0,-1,  z)
+        self.verts[3] = Vector( 0, 1,  z)
+
+        self.add_face([0, 2, 1])
+        self.add_face([0, 3, 1])
+        self.add_face([2, 1, 3])
+        self.add_face([0, 2, 3])
 
 class Cube(PlatonicSolid):
     def __init__(self):
         super(Cube, self).__init__("Cube", 8)
+
+    def add_face(self, indices):
+        vertex_a = self.verts[indices[0]]
+        vertex_b = self.verts[indices[1]]
+        normal = self.calculate_normal(vertex_a, vertex_b)
+        self.tris.append(Triangle([ indices[0], indices[1], indices[2] ], normal))
+        self.tris.append(Triangle([ indices[2], indices[3], indices[0] ], normal))
+
+    def orientate_to_base(self):
+        self.perform_translation(Vector(1, 1, 1))
+
+    def generate(self):
+        index = 0
+        for ix in range(-1, 2, 2):
+            for iy in range(-1, 2, 2):
+                for iz in range(-1, 2, 2):
+                    self.verts[index] = Vector(ix * 1, iy * 1, iz * 1)
+                    index += 1
+
+        self.add_face([0, 2, 3, 1])
+        self.add_face([0, 4, 6, 2])
+        self.add_face([4, 5, 7, 6])
+        self.add_face([1, 3, 7, 5])
+        self.add_face([2, 6, 7, 3])
+        self.add_face([0, 1, 5, 4])
 
 class Dodecahedron(PlatonicSolid):
     def __init__(self):
         super(Dodecahedron, self).__init__("Dodecahedron", 20)
 
     def add_face(self, indices):
-        self.indices.append(
-            [ indices[0], indices[1], indices[2] ])
-        self.indices.append(
-            [ indices[2], indices[3], indices[0] ])
-        self.indices.append(
-            [ indices[3], indices[4], indices[0] ])
+        vertex_a = self.verts[indices[0]]
+        vertex_b = self.verts[indices[1]]
+        normal = self.calculate_normal(vertex_a, vertex_b)
+        self.tris.append(
+            Triangle([ indices[0], indices[1], indices[2] ], normal))
+        self.tris.append(
+            Triangle([ indices[2], indices[3], indices[0] ], normal))
+        self.tris.append(
+            Triangle([ indices[3], indices[4], indices[0] ], normal))
 
     def orientate_to_base(self):
-        # Assume a Z-up coordinate system (urgh)
         angle = (2.0 * math.atan(PHI_GOLDEN)) * 0.5
         rot_matrix = RotationMatrixXAxis(angle)
+        self.perform_rotation(rot_matrix)
 
-        for vertexIdx in range(0, len(self.verts)):
-            self.verts[vertexIdx] = MatrixMultiply(self.verts[vertexIdx], rot_matrix)
+        e = math.sqrt(5.0) - 1.0 # This is the edge length
+        r = e * 0.5 * math.sqrt((5.0/2.0) + (11.0/10.0) * math.sqrt(5.0)) # This is the radius of an
+                                                                          # inscribed sphere.
+        c = math.sqrt(3.0) # This is the radius of a containing sphere.
+        self.perform_translation(Vector(-c, c, r))
 
     def generate(self):
         phi = PHI_GOLDEN
@@ -114,14 +201,6 @@ class Dodecahedron(PlatonicSolid):
         self.add_face([0, 2, 12, 5, 4])
 
 class STLWriter:
-    def calculate_normal(self, a, b):
-        # Cross product a x b, then normalise
-        x = a["y"] * b["z"] - a["z"] * b["y"]
-        y = a["z"] * b["x"] - a["x"] * b["z"]
-        z = a["x"] * b["y"] - a["y"] * b["x"]
-        l = math.sqrt(x*x + y*y + z*z)
-        return Vector(x/l,y/l,z/l)
-
     def stringify_vector_with_spaces(self, vector):
         s = ""
         s += "%.6f" % vector["x"] + " "
@@ -134,11 +213,11 @@ class STLWriter:
         f = open(file_name, "w")
         f.write("solid " + solid.name + "\n")
 
-        for triangle in solid.indices:
-            vertex_a = solid.verts[triangle[0]]
-            vertex_b = solid.verts[triangle[1]]
-            vertex_c = solid.verts[triangle[2]]
-            normal   = self.calculate_normal(vertex_a, vertex_b)
+        for triangle in solid.tris:
+            vertex_a = solid.verts[triangle["indices"][0]]
+            vertex_b = solid.verts[triangle["indices"][1]]
+            vertex_c = solid.verts[triangle["indices"][2]]
+            normal   = triangle["normal"]
 
             f.write("facet normal ")
             f.write(self.stringify_vector_with_spaces(normal) + "\n")

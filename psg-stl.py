@@ -61,7 +61,7 @@ class PlatonicSolid(object):
         for idx in range(0, verts-1):
             self.verts.append(Vector(0,0,0))
 
-    def generate(self):
+    def generate(self, split):
         raise Exception("Unimplemented method!")
 
     def orientate_to_base(self):
@@ -102,7 +102,7 @@ class Tetrahedron(PlatonicSolid):
         rot_matrix = RotationMatrixXAxis(angleX)
         self.perform_rotation(rot_matrix)
 
-    def generate(self):
+    def generate(self, split):
         z = 1.0 / math.sqrt(2.0)
 
         self.verts[0] = Vector(-1, 0, -z)
@@ -129,7 +129,7 @@ class Cube(PlatonicSolid):
     def orientate_to_base(self):
         self.perform_translation(Vector(1, 1, 1))
 
-    def generate(self):
+    def generate(self, split):
         index = 0
         for ix in range(-1, 2, 2):
             for iy in range(-1, 2, 2):
@@ -143,6 +143,48 @@ class Cube(PlatonicSolid):
         self.add_face([1, 3, 7, 5])
         self.add_face([2, 6, 7, 3])
         self.add_face([0, 1, 5, 4])
+
+class Octohedron(PlatonicSolid):
+    def __init__(self):
+        super(Octohedron, self).__init__("Octohedron", 6)
+
+    def add_face(self, indices, normal=None):
+        if not normal:
+            vertex_a = self.verts[indices[0]]
+            vertex_b = self.verts[indices[1]]
+            normal = self.calculate_normal(vertex_a, vertex_b)
+
+        self.tris.append(Triangle([ indices[0], indices[1], indices[2] ], normal))
+
+    def orientate_to_base(self):
+        self.perform_rotation(RotationMatrixZAxis(math.pi * 0.25))
+        if self.is_split:
+            self.perform_translation(Vector(-1,1,0))
+        else:
+            self.perform_translation(Vector(-1,1,1))
+
+    def generate(self, split):
+        self.is_split = split
+
+        self.verts[0] = Vector(-1, 0, 0)
+        self.verts[1] = Vector( 1, 0, 0)
+        self.verts[2] = Vector( 0,-1, 0)
+        self.verts[3] = Vector( 0, 1, 0)
+        self.verts[4] = Vector( 0, 0,-1)
+        self.verts[5] = Vector( 0, 0, 1)
+
+        self.add_face([1, 2, 5])
+        self.add_face([5, 2, 0])
+        self.add_face([1, 5, 3])
+        self.add_face([5, 0, 3])
+        if split:
+            self.add_face([0, 1, 3], normal=Vector(0,0,-1))
+            self.add_face([0, 2, 1], normal=Vector(0,0,-1))
+        else:
+            self.add_face([4, 2, 1])
+            self.add_face([0, 2, 4])
+            self.add_face([0, 4, 3])
+            self.add_face([4, 1, 3])
 
 class Dodecahedron(PlatonicSolid):
     def __init__(self):
@@ -170,7 +212,7 @@ class Dodecahedron(PlatonicSolid):
         c = math.sqrt(3.0) # This is the radius of a containing sphere.
         self.perform_translation(Vector(-c, c, r))
 
-    def generate(self):
+    def generate(self, split):
         phi = PHI_GOLDEN
         one_over_phi = 1.0 / phi
 
@@ -242,6 +284,7 @@ if __name__ == '__main__':
     SOLIDS = {
         1: Tetrahedron(),
         2: Cube(),
+        3: Octohedron(),
         4: Dodecahedron()
     }
 
@@ -254,11 +297,12 @@ if __name__ == '__main__':
                 The following options denote the type:
                 1. Tetrahedron
                 2. Cube
-                3. Octahedron
+                3. Octahedron (can be split)
                 4. Dodecahedron
                 5. Icosahedron
             '''))
     parser.add_argument('--type', required=True, help='type of solid to generate.')
+    parser.add_argument('--split', required=False, action='store_true', help='splits the solid for ease of printing.')
     args = parser.parse_args()
 
     solid_type = int(args.type)
@@ -267,7 +311,7 @@ if __name__ == '__main__':
     else:
         solid = SOLIDS[solid_type]
         print "Generating solid of type " + solid.name
-        solid.generate()
+        solid.generate(args.split)
         solid.orientate_to_base()
 
         writer = STLWriter()

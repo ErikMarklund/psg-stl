@@ -1,6 +1,8 @@
 psg-stl
 -------
 
+![solids image](docs/solids.png)
+
 A little python script to generate STL models of the five platonic solids.
 
 ## The solids

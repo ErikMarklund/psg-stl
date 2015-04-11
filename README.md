@@ -5,6 +5,31 @@ A little python script to generate STL models of the five platonic solids.
 
 ## The solids
 
+### Tetrahedron
+
+Simple enough but proved a pain in the arse to orientate to Z-up base-plane. The solution was simple enough: translate first and rotate second.
+
+Coordinates are:
+
+	( ±1,  0, −1/√2 )
+	(  0, ±1,  1/√2 )
+
+### Cube (Hexahedron)
+
+Everyone knows what a cube is right?!
+
+	( ±1, ±1, ±1 )
+
+### Octahedron
+
+A pretty simple little number. The vertices making up this solid are as follows:
+
+	( ±1,  0,  0 )
+	(  0, ±1,  0 )
+	(  0,  0, ±1 )
+
+Because this solid would not 3D print very well, use the `--split` argument to slice this solid horizontally at the centre. Print 2 duplicates out and glue them together.
+
 ### Dodecahedron
 
 [This article on Wikipedia](https://en.wikipedia.org/wiki/Dodecahedron) describes the coordinates of the dodecahedron. The vertices are formed as follows:
